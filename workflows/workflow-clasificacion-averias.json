@@ -1,0 +1,414 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1ITVkDhlO71RJRIcyGbUBktM9uyeJibiFIKthCvmHOzY",
+          "mode": "list",
+          "cachedResultName": "HouseZen (respuestas)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ITVkDhlO71RJRIcyGbUBktM9uyeJibiFIKthCvmHOzY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 612291536,
+          "mode": "list",
+          "cachedResultName": "Respuestas de formulario 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ITVkDhlO71RJRIcyGbUBktM9uyeJibiFIKthCvmHOzY/edit#gid=612291536"
+        },
+        "event": "rowAdded",
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRange"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        304,
+        -16
+      ],
+      "id": "67be8636-f0ef-4399-b326-18172557a432",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "mngr3aFUYXqy54rp",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza esta avería:\n\nFECHA: {{ $json['Marca temporal'] }}\nTIPO DE AVERÍA: {{ $json['¿Cuál es la avería?'] }}\nDESCRIPCIÓN: {{ $json['Descripción detallada'] }}\n¿ES URGENTE?: {{ $json['¿Es urgente?'] }}\n\nResponde en este formato JSON exacto:\n{\n  \"responsable\": \"SEGURO o MANITAS\",\n  \"justificacion\": \"Explicación en 1 línea\"\n}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Eres un clasificador de averías que determina responsabilidad de pago.\n\nCRITERIOS PARA SEGURO:\n- Causa daños a terceras personas o propiedades ajenas\n- Involucra responsabilidad civil\n- Ejemplos: inundación a vecino, desprendimiento que daña vehículo, cortocircuito en zonas comunes\n\nCRITERIOS PARA MANITAS:\n- Desgaste normal por uso\n- Falta de mantenimiento preventivo\n- Avería interna que NO afecta a terceros\n- Ejemplos: grifo que gotea, electrodoméstico averiado, tapa de váter suelta, persianas rotas\n\nResponde ÚNICAMENTE en formato JSON, sin texto adicional."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        832,
+        0
+      ],
+      "id": "d5ce7df8-d36f-4b33-8059-d9b5b84c8ea7",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sendTo": "javierpm0609@gmail.com",
+        "subject": "Hola Manitas",
+        "message": "=Estimada empresa reparaciones Jonathan y asociados, \n\nTenemos una nueva avería del inmueble XXXXX. \nNecesitamos presupuestar la reparación. \n\nA continuación te adjuntamos los detalles de la avería:\n\n\nTIPO DE AVERÍA: {{ $('Limit').item.json['¿Cuál es la avería?'] }}\nDESCRIPCIÓN: {{ $('Limit').item.json['Descripción detallada'] }}\nDOCUMENTACIÓN DE SOPORTE: {{ $('Limit').item.json['Incluye una imagen o vídeo'] }}\n\nEsperamos su presupuesto lo antes posible,\nGracias, \n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2416,
+        -32
+      ],
+      "id": "95f9e6ef-7c9a-4046-b3ea-5a55eeaad4fb",
+      "name": "Send a message",
+      "webhookId": "710bb41e-b75e-4251-9607-69f26e05ae84",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TmI7HB8VtuwOTcfo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keep": "lastItems"
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        544,
+        0
+      ],
+      "id": "c8d29f26-32a4-4fa2-ab86-5625bc8259eb",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        688,
+        208
+      ],
+      "id": "c5893a79-d85d-4174-90d0-f727b165c159",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RJnwqD2Hi5sezf45",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3b92c474-b83e-46d1-b9c0-89701d1012cf",
+              "leftValue": "={{ $json.output.match(/\"responsable\":\\s*\"(\\w+)\"/)[1] }}",
+              "rightValue": "MANITAS",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "2566fcb0-8b30-4a60-a222-36fd67bc93e1",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "javierpm0609@gmail.com",
+        "subject": "Hola Propietario",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1584,
+        288
+      ],
+      "id": "21655b3b-7b9a-41fe-a5a2-15d4253092ce",
+      "name": "Send a message1",
+      "webhookId": "710bb41e-b75e-4251-9607-69f26e05ae84",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TmI7HB8VtuwOTcfo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analiza esta avería según la Ley de Arrendamientos Urbanos:\n\nFECHA: {{ $('Limit').item.json['Marca temporal'] }}\nTIPO DE AVERÍA: {{ $('Limit').item.json['¿Cuál es la avería?'] }}\nDESCRIPCIÓN: {{ $('Limit').item.json['Descripción detallada'] }}\n¿ES URGENTE?: {{ $('Limit').item.json['¿Es urgente?'] }}\n\nConsulta la LAU para determinar la responsabilidad.\n\nResponde en este formato JSON exacto:\n{\n  \"responsable\": \"INQUILINO o PROPIETARIO\",\n  \"articulo_lau\": \"Artículo aplicable (ej: Artículo 21.4 LAU)\",\n  \"justificacion\": \"Explicación legal en 1-2 líneas\",\n  \"tipo_reparacion\": \"pequeña_reparacion o reparacion_mayor\"\n}",
+        "options": {
+          "systemMessage": "Eres un experto en Ley de Arrendamientos Urbanos (LAU) que determina responsabilidad de reparaciones entre inquilino y propietario.\n\nTu tarea: analizar cada avería y determinar quién debe asumir el coste según la LAU.\n\nCRITERIOS PARA INQUILINO (Artículo 21 LAU):\n- Pequeñas reparaciones por desgaste del uso ordinario\n- Mantenimiento habitual de la vivienda\n- Reparaciones derivadas del mal uso por el inquilino o terceros bajo su responsabilidad\n- Ejemplos: bombillas fundidas, pequeñas reparaciones de grifos, persianas mal usadas, manchas en paredes, cerraduras atascadas por mal uso\n\nCRITERIOS PARA PROPIETARIO (Artículo 21 LAU):\n- Reparaciones necesarias por deterioro natural del tiempo\n- Averías estructurales o de elementos comunes\n- Instalaciones generales (calefacción, fontanería principal, electricidad principal)\n- Vicios ocultos o defectos de construcción\n- Reparaciones mayores (no derivadas del mal uso)\n- Ejemplos: humedades estructurales, averías en calderas/calentadores, electrodomésticos incluidos en el alquiler, instalación eléctrica general, desagües principales\n\nIMPORTANTE:\n- La LAU establece que el inquilino solo responde de pequeñas reparaciones por desgaste ordinario\n- Las reparaciones que excedan el desgaste normal son del propietario\n- En caso de duda, favorece al inquilino (principio pro consumatore)\n\nResponde ÚNICAMENTE en formato JSON, sin texto adicional."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1552,
+        -16
+      ],
+      "id": "ada3ac2f-93f9-4714-9050-36e214592cc0",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        128
+      ],
+      "id": "fa079d1f-4384-4666-a017-bbd21383940a",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RJnwqD2Hi5sezf45",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "sendTo": "javierpm0609@gmail.com",
+        "subject": "Hola Inquilino",
+        "message": "=Hola inquilino, con respecto a su última incidencia abierta, es su responsabilidad la resparación en base al \n{{ $json.output.match(/\"articulo_lau\":\\s*\"([^\"]+)\"/)?.[1] }}\n",
+        "responseType": "customForm",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "¿Cómo quiere solucionar la avería?",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Por mi cuenta"
+                  },
+                  {
+                    "option": "Manitas de HouseZen"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1904,
+        -16
+      ],
+      "id": "2c1e89fb-7d1e-49a9-9944-c88c1d1400e6",
+      "name": "Send a message2",
+      "webhookId": "978b460c-86ae-4de9-bcb4-1eb66a537abe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "TmI7HB8VtuwOTcfo",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "87bc8c9f-0053-43d2-97bd-6f805c970e88",
+              "leftValue": "={{ $json.data['¿Cómo quiere solucionar la avería?'] }}",
+              "rightValue": "Manitas de HouseZen",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        -16
+      ],
+      "id": "c35ef055-152f-4e99-8bdb-1970b1b54418",
+      "name": "If1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message2": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "5a65d576-a668-43af-924a-a935c12e7788",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c13361735a5e4439d73a1df21abfa1c52d26e9ac69211efbc9c4eb119160667d"
+  },
+  "id": "62shjIF9AeIiWX6J",
+  "tags": []
+}
